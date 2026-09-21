@@ -56,7 +56,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
-const DB_NAME='kompRaportDB', STORE='reports', FOLDER_STORE='folders', UNFILED='__unfiled__';
+const DB_NAME='kompRaportDB_v2', DB_VER=1, DATA_STORE='items', LEGACY_DB='kompRaportDB', UNFILED='__unfiled__';
 let db=null, reports=[], folders=[], selected=new Set(), current=null, currentFolderKey=null, saveTimer=null, cropper=null, cropIndex=-1;
 const $=s=>document.querySelector(s), esc=s=>(s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200)}
@@ -65,17 +65,69 @@ function uuid(){return (crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Mat
 function nowISO(){return new Date().toISOString()}
 function fmtDate(s){try{return new Intl.DateTimeFormat('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(s))}catch{return ''}}
 function safeName(s){return (s||'raport').trim().replace(/[\\/:*?"<>|]/g,'_')||'raport'}
-function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME);r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
-function hasFolderStore(){return !!db&&db.objectStoreNames.contains(FOLDER_STORE)}
-function storeTx(store,mode='readonly'){return db.transaction(store,mode).objectStore(store)}
-function tx(mode='readonly'){return storeTx(STORE,mode)}
-function getAllFrom(store){return new Promise((res,rej)=>{const r=store.getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
-async function dbAll(){const all=await getAllFrom(tx());return all.filter(x=>x&&x.kind!=='folder')}
-function dbPut(obj){return new Promise((res,rej)=>{const r=tx('readwrite').put(obj);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
-function dbDel(id){return new Promise((res,rej)=>{const r=tx('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
-async function dbFolders(){if(hasFolderStore())return getAllFrom(storeTx(FOLDER_STORE));const all=await getAllFrom(tx());return all.filter(x=>x&&x.kind==='folder')}
-function dbFolderPut(obj){const item={...obj,kind:'folder'};return new Promise((res,rej)=>{const store=hasFolderStore()?storeTx(FOLDER_STORE,'readwrite'):tx('readwrite');const r=store.put(item);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
-function dbFolderDel(id){return new Promise((res,rej)=>{const store=hasFolderStore()?storeTx(FOLDER_STORE,'readwrite'):tx('readwrite');const r=store.delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+
+function openDB(){
+ return new Promise((res,rej)=>{
+   const r=indexedDB.open(DB_NAME,DB_VER);
+   r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(DATA_STORE))d.createObjectStore(DATA_STORE,{keyPath:'id'})};
+   r.onsuccess=()=>{db=r.result;res(db)};
+   r.onerror=()=>rej(r.error||new Error('Nie można otworzyć bazy danych'));
+   r.onblocked=()=>rej(new Error('Baza danych jest zablokowana przez inną kartę aplikacji'));
+ });
+}
+function dataStore(mode='readonly'){return db.transaction(DATA_STORE,mode).objectStore(DATA_STORE)}
+function getAllData(){return new Promise((res,rej)=>{const r=dataStore().getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+function dataPut(obj){return new Promise((res,rej)=>{const r=dataStore('readwrite').put(obj);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function dataDel(id){return new Promise((res,rej)=>{const r=dataStore('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+
+async function dbAll(){const all=await getAllData();return all.filter(x=>x&&x.kind!=='folder').map(x=>({...x,kind:'report'}))}
+function dbPut(obj){return dataPut({...obj,kind:'report'})}
+function dbDel(id){return dataDel(id)}
+async function dbFolders(){const all=await getAllData();return all.filter(x=>x&&x.kind==='folder')}
+function dbFolderPut(obj){return dataPut({...obj,kind:'folder'})}
+function dbFolderDel(id){return dataDel(id)}
+
+function legacyGetAll(database,storeName){
+ return new Promise((res,rej)=>{
+   try{
+     if(!database.objectStoreNames.contains(storeName)){res([]);return}
+     const tr=database.transaction(storeName,'readonly');
+     const q=tr.objectStore(storeName).getAll();
+     q.onsuccess=()=>res(q.result||[]);
+     q.onerror=()=>rej(q.error);
+   }catch(e){rej(e)}
+ });
+}
+async function migrateLegacyIfNeeded(){
+ const existing=await getAllData();
+ if(existing.length) return;
+ await new Promise(resolve=>{
+   let req;
+   try{req=indexedDB.open(LEGACY_DB)}catch{resolve();return}
+   req.onerror=()=>resolve();
+   req.onblocked=()=>resolve();
+   req.onsuccess=async()=>{
+     const old=req.result;
+     try{
+       let oldReports=[], oldFolders=[];
+       if(old.objectStoreNames.contains('reports')){
+         const raw=await legacyGetAll(old,'reports');
+         oldReports=raw.filter(x=>x&&x.kind!=='folder');
+         oldFolders.push(...raw.filter(x=>x&&x.kind==='folder'));
+       }
+       if(old.objectStoreNames.contains('folders')){
+         oldFolders.push(...await legacyGetAll(old,'folders'));
+       }
+       const folderMap=new Map();
+       for(const folder of oldFolders){if(folder&&folder.id)folderMap.set(folder.id,{...folder,kind:'folder'})}
+       for(const report of oldReports){if(report&&report.id)await dataPut({...report,kind:'report'})}
+       for(const folder of folderMap.values())await dataPut(folder);
+     }catch(e){console.warn('Legacy migration skipped',e)}
+     try{old.close()}catch{}
+     resolve();
+   };
+ });
+}
 function activeFolderId(){return currentFolderKey===UNFILED?null:currentFolderKey}
 function newReport(){return {id:uuid(),folderId:activeFolderId(),computerNo:'',model:'',cpu:'',ram:'8',ramOther:'',disk:'256',diskOther:'',os:'Windows 10 Pro',osOther:'',notes:'',condition:'Dobry',conditionDesc:'',photos:[],createdAt:nowISO(),updatedAt:nowISO()}}
 function isStandalone(){return matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
@@ -174,7 +226,7 @@ async function sharePDF(){loading(true);try{await saveCurrent();if(!current.comp
 function jpegToPngBlob(p){return new Promise((res,rej)=>{const img=new Image();img.onerror=rej;img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>b?res(b):rej(new Error('Błąd PNG')),'image/png')};img.src=p.dataUrl})}
 async function exportBatch(){if(!selected.size)return;if(!window.JSZip){alert('Generator ZIP nie załadował się. Połącz się z internetem i odśwież aplikację raz.');return}loading(true);try{const zip=new JSZip();const picked=reports.filter(r=>selected.has(r.id));for(const r of picked){const base=safeName(r.computerNo||r.model||'raport');const pdf=await makePdf(r);zip.file(base+'.pdf',pdf);const imgs=r.photos.filter(p=>p.export);for(let i=0;i<imgs.length;i++){const png=await jpegToPngBlob(imgs[i]);const name=imgs.length===1?`${base}.png`:`${base}_${i+1}.png`;zip.file(name,png)}}const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});const d=new Date();const ds=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;await shareBlob(blob,`Raporty_${ds}.zip`,'Paczka raportów')}catch(e){if(e.name!=='AbortError')alert('Nie udało się utworzyć paczki: '+e.message)}finally{loading(false)}}
 function showInstall(){$('#installModal').classList.add('show')}function closeInstall(){$('#installModal').classList.remove('show')}
-async function init(){try{$('#app').innerHTML='<div class="card empty"><div class="emoji">⏳</div><b>Uruchamianie aplikacji…</b></div>';await openDB();[reports,folders]=await Promise.all([dbAll(),dbFolders()]);renderHome();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})}catch(e){console.error(e);$('#app').innerHTML='<div class="card empty"><div class="emoji">⚠️</div><b>Nie udało się uruchomić aplikacji</b><div class="mt8">Odśwież stronę. Jeśli problem zostanie, otwórz link bez trybu prywatnego Safari.</div></div>';alert('Nie udało się uruchomić pamięci aplikacji: '+(e?.message||e))}}
+async function init(){try{$('#app').innerHTML='<div class="card empty"><div class="emoji">⏳</div><b>Uruchamianie aplikacji…</b></div>';await openDB();await migrateLegacyIfNeeded();[reports,folders]=await Promise.all([dbAll(),dbFolders()]);renderHome();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})}catch(e){console.error(e);$('#app').innerHTML='<div class="card empty"><div class="emoji">⚠️</div><b>Nie udało się uruchomić aplikacji</b><div class="mt8">'+esc(e?.message||String(e))+'</div><button class="btn primary mt12" onclick="location.reload()">Odśwież</button></div>'}}
 init();
 </script>
 </body>
