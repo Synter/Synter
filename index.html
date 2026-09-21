@@ -91,11 +91,11 @@ function renderEditor(){
  <div class="section-title">Specyfikacja</div><div class="card">
  <div class="field"><span class="label">RAM</span><div class="chips">${['8','16','24','32'].map(v=>chip(v+' GB',r.ram===v,`setChoice('ram','${v}')`)).join('')}${chip('Inne',r.ram==='other',`setChoice('ram','other')`)}</div>${r.ram==='other'?field('', 'ramOther', r.ramOther,'Wpisz np. 64','numeric'):''}</div>
  <div class="field"><span class="label">Dysk</span><div class="chips">${['256','512'].map(v=>chip(v+' GB',r.disk===v,`setChoice('disk','${v}')`)).join('')}${chip('Inny',r.disk==='other',`setChoice('disk','other')`)}</div>${r.disk==='other'?field('', 'diskOther', r.diskOther,'Wpisz pojemność w GB','numeric'):''}</div>
- <div class="field"><span class="label">System operacyjny</span><div class="chips">${['Windows 10 Pro','Windows 11 Pro'].map(v=>chip(v,r.os===v,`setChoice('os',${JSON.stringify(v)})`)).join('')}${chip('Inny',r.os==='other',`setChoice('os','other')`)}</div>${r.os==='other'?field('', 'osOther', r.osOther,'Wpisz system'):''}</div>
+ <div class="field"><span class="label">System operacyjny</span><div class="chips">${['Windows 10 Pro','Windows 11 Pro'].map(v=>chip(v,r.os===v,`setChoice('os','${v}')`)).join('')}${chip('Inny',r.os==='other',`setChoice('os','other')`)}</div>${r.os==='other'?field('', 'osOther', r.osOther,'Wpisz system'):''}</div>
  </div>
  <div class="section-title">Stan</div><div class="card">
  <div class="field"><span class="label">Uwagi — w PDF będą duże i czerwone</span><textarea class="textarea" placeholder="np. Laptop sprzedawany jest bez zasilacza." oninput="setVal('notes',this.value)">${esc(r.notes)}</textarea>${r.notes?`<div class="warn-preview mt8">${esc(r.notes)}</div>`:''}</div>
- <div class="field"><span class="label">Stan techniczny</span><div class="chips">${['Średni','Dobry','Bardzo dobry'].map(v=>`<button class="chip state ${r.condition===v?'active':''}" onclick="setChoice('condition',${JSON.stringify(v)})">${v}</button>`).join('')}</div></div>
+ <div class="field"><span class="label">Stan techniczny</span><div class="chips">${['Średni','Dobry','Bardzo dobry'].map(v=>`<button class="chip state ${r.condition===v?'active':''}" onclick="setChoice('condition','${v}')">${v}</button>`).join('')}</div></div>
  <div class="field"><span class="label">Opis stanu</span><textarea class="textarea" placeholder="np. brak 1 śrubki od obudowy, ryski" oninput="setVal('conditionDesc',this.value)">${esc(r.conditionDesc)}</textarea></div>
  </div>
  <div class="section-title">Zdjęcia (${r.photos.length})</div><div class="card">
