@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Raporty" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <title>Raporty komputerów</title>
+  <style>
+    :root{--bg:#f4f6fb;--card:#fff;--ink:#12182a;--muted:#687088;--line:#e6e9f2;--accent:#275efe;--accent2:#1f4ed5;--danger:#d72828;--good:#13a465;--shadow:0 10px 30px rgba(26,39,75,.08);--r:18px}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,Segoe UI,Roboto,Arial,sans-serif}
+    body{min-height:100vh;padding-top:env(safe-area-inset-top);padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+    button,input,textarea,select{font:inherit}button{cursor:pointer}
+    .app{max-width:760px;margin:0 auto;padding:16px}.topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(244,246,251,.98),rgba(244,246,251,.9));backdrop-filter:blur(16px);padding:8px 0 12px}
+    .brand{display:flex;align-items:center;gap:12px;margin:4px 2px 14px}.logo{width:44px;height:44px;border-radius:14px;background:#0b1020;color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:var(--shadow)}
+    h1{font-size:25px;line-height:1.1;margin:0}.sub{color:var(--muted);font-size:13px;margin-top:3px}.row{display:flex;gap:10px;align-items:center}.row.wrap{flex-wrap:wrap}.grow{flex:1;min-width:0}
+    .btn{border:0;border-radius:14px;padding:13px 15px;font-weight:760;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;background:#e9edf8;color:var(--ink)}
+    .btn.primary{background:var(--accent);color:#fff;box-shadow:0 8px 22px rgba(39,94,254,.25)}.btn.primary:active{background:var(--accent2)}.btn.dark{background:#0b1020;color:white}.btn.ghost{background:white;border:1px solid var(--line)}.btn.danger{background:#fff0f0;color:#b91c1c;border:1px solid #ffd2d2}.btn.small{min-height:38px;padding:9px 11px;border-radius:12px;font-size:13px}
+    .search{width:100%;height:48px;border:1px solid var(--line);border-radius:14px;background:white;padding:0 14px;font-size:16px;outline:none;box-shadow:0 3px 12px rgba(20,33,65,.03)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin:12px 0}.report-card{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}.check{width:22px;height:22px;accent-color:var(--accent)}
+    .report-no{font-size:18px;font-weight:850}.report-model{font-size:14px;color:var(--muted);margin-top:2px}.report-date{font-size:11px;color:#9299aa;margin-top:5px}.chev{font-size:24px;color:#9aa1b3}
+    .empty{text-align:center;padding:42px 18px;color:var(--muted)}.empty .emoji{font-size:42px;margin-bottom:10px}.batch{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom));z-index:15;background:#0b1020;color:white;border-radius:16px;padding:12px;display:none;box-shadow:0 14px 34px rgba(8,14,32,.25);margin-top:12px}.batch.show{display:flex}
+    .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#81899d;font-weight:800;margin:18px 2px 8px}.field{margin:12px 0}.label{display:block;font-size:13px;color:#61697d;font-weight:750;margin:0 0 7px 2px}
+    .input,.textarea,.select{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px 14px;font-size:16px;outline:none;min-height:50px}.textarea{min-height:100px;resize:vertical}.input:focus,.textarea:focus,.select:focus{border-color:#92adff;box-shadow:0 0 0 4px rgba(39,94,254,.1)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap}.chip{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px 14px;font-weight:750;min-width:64px}.chip.active{background:#e9efff;border-color:#90a9ff;color:#1743bf}.chip.state.active{background:#e9fff4;border-color:#81dcb0;color:#087747}
+    .notice{font-size:12px;color:var(--muted);margin:7px 2px 0}.warn-preview{border-left:4px solid var(--danger);padding:10px 12px;background:#fff4f4;border-radius:10px;color:var(--danger);font-weight:800;white-space:pre-wrap}
+    .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}.photo{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}.photo img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#eef1f7}.photo-meta{padding:9px}.photo-title{font-size:12px;font-weight:800;display:flex;justify-content:space-between;gap:6px}.photo-actions{display:flex;gap:6px;margin-top:7px}.photo-actions button{flex:1;border:0;background:#eef2fb;border-radius:9px;padding:8px 4px;font-size:12px}.export-toggle{display:flex;align-items:center;gap:7px;font-size:12px;margin-top:8px;color:#4e566b}.export-toggle input{width:18px;height:18px;accent-color:var(--accent)}
+    .photo-add{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.file-input{display:none}.editor-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}.back{width:44px;height:44px;border:0;border-radius:14px;background:white;border:1px solid var(--line);font-size:22px}.editor-title{font-weight:850;font-size:20px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.save-dot{font-size:12px;color:var(--good);font-weight:750;margin-left:auto}
+    .sticky-actions{position:sticky;bottom:0;z-index:15;margin:18px -16px -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(244,246,251,.25),rgba(244,246,251,.98) 30%);backdrop-filter:blur(12px)}.sticky-actions .btn{flex:1}
+    .install{background:#0b1020;color:#fff;border-radius:16px;padding:14px;margin:10px 0 14px;display:none}.install.show{display:block}.install-title{font-weight:850}.install-txt{font-size:13px;opacity:.8;margin-top:3px;line-height:1.35}
+    .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(15px);background:#111827;color:#fff;border-radius:13px;padding:11px 14px;font-size:13px;font-weight:700;opacity:0;pointer-events:none;transition:.2s;z-index:100;max-width:88%;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.22)}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .modal{position:fixed;inset:0;background:rgba(5,10,24,.54);display:none;align-items:flex-end;z-index:80}.modal.show{display:flex}.sheet{width:100%;max-width:760px;margin:0 auto;background:#fff;border-radius:24px 24px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}.sheet h2{margin:2px 0 10px}.sheet p{color:var(--muted);line-height:1.45}
+    .loading{position:fixed;inset:0;background:rgba(255,255,255,.72);backdrop-filter:blur(5px);display:none;place-items:center;z-index:120}.loading.show{display:grid}.spinner{width:44px;height:44px;border:4px solid #dce3f7;border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.hidden{display:none!important}.mt8{margin-top:8px}.mt12{margin-top:12px}.divider{height:1px;background:var(--line);margin:14px 0}
+    @media(min-width:700px){.photos{grid-template-columns:repeat(3,1fr)}.app{padding:22px}.sticky-actions{margin-left:-22px;margin-right:-22px;margin-bottom:-22px;padding-left:22px;padding-right:22px}}
+  </style>
+</head>
+<body>
+<div id="app" class="app"></div>
+<div id="toast" class="toast"></div>
+<div id="loading" class="loading"><div class="spinner"></div></div>
+<div id="installModal" class="modal" onclick="if(event.target===this) closeInstall()"><div class="sheet"><h2>Dodaj aplikację na ekran główny</h2><p>Na iPhonie otwórz tę stronę w <b>Safari</b>, stuknij ikonę <b>Udostępnij</b> (kwadrat ze strzałką) i wybierz <b>Dodaj do ekranu początkowego</b>.</p><button class="btn primary" style="width:100%" onclick="closeInstall()">OK</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const DB_NAME='kompRaportDB', DB_VER=1, STORE='reports';
+let db=null, reports=[], selected=new Set(), current=null, saveTimer=null;
+const $=s=>document.querySelector(s), esc=s=>(s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200)}
+function loading(on){$('#loading').classList.toggle('show',!!on)}
+function uuid(){return (crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2))}
+function nowISO(){return new Date().toISOString()}
+function fmtDate(s){try{return new Intl.DateTimeFormat('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(s))}catch{return ''}}
+function safeName(s){return (s||'raport').trim().replace(/[\\/:*?"<>|]/g,'_')||'raport'}
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id'})};r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)})}
+function tx(mode='readonly'){return db.transaction(STORE,mode).objectStore(STORE)}
+function dbAll(){return new Promise((res,rej)=>{const r=tx().getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+function dbPut(obj){return new Promise((res,rej)=>{const r=tx('readwrite').put(obj);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function dbDel(id){return new Promise((res,rej)=>{const r=tx('readwrite').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+function newReport(){return {id:uuid(),computerNo:'',model:'',cpu:'',ram:'8',ramOther:'',disk:'256',diskOther:'',os:'Windows 10 Pro',osOther:'',notes:'',condition:'Dobry',conditionDesc:'',photos:[],createdAt:nowISO(),updatedAt:nowISO()}}
+function isStandalone(){return matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function home(){current=null;renderHome()}
+function renderHome(){
+ const q=(window._search||'').toLowerCase();
+ const items=reports.filter(r=>(r.computerNo+' '+r.model).toLowerCase().includes(q)).sort((a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt));
+ const install=!isStandalone();
+ $('#app').innerHTML=`<div class="topbar"><div class="brand"><div class="logo">R</div><div><h1>Raporty komputerów</h1><div class="sub">PDF + zdjęcia + paczka ZIP</div></div></div>
+ <button class="btn primary" style="width:100%" onclick="editNew()">＋ Nowy komputer</button>
+ ${install?`<div class="install show" onclick="showInstall()"><div class="install-title">📱 Zainstaluj na iPhonie</div><div class="install-txt">Dodaj do ekranu początkowego, żeby działała jak zwykła aplikacja.</div></div>`:''}
+ <input class="search" placeholder="Szukaj po numerze lub modelu…" value="${esc(window._search||'')}" oninput="window._search=this.value;renderHome()"></div>
+ ${items.length?items.map(r=>`<div class="card report-card"><input class="check" type="checkbox" ${selected.has(r.id)?'checked':''} onchange="toggleSel('${r.id}',this.checked)"><div onclick="openReport('${r.id}')"><div class="report-no">${esc(r.computerNo||'Bez numeru')}</div><div class="report-model">${esc(r.model||'Bez modelu')}</div><div class="report-date">${fmtDate(r.updatedAt)}</div></div><div class="chev" onclick="openReport('${r.id}')">›</div></div>`).join(''):`<div class="card empty"><div class="emoji">💻</div><b>Brak raportów</b><div class="mt8">Dodaj pierwszy komputer.</div></div>`}
+ <div class="batch ${selected.size?'show':''}"><div class="grow"><b>${selected.size} zazn.</b><div style="font-size:12px;opacity:.75">PDF-y + wybrane zdjęcia</div></div><button class="btn primary small" onclick="exportBatch()">Utwórz ZIP</button></div>`;
+}
+function toggleSel(id,on){on?selected.add(id):selected.delete(id);renderHome()}
+async function editNew(){current=newReport();await dbPut(current);reports.unshift(current);renderEditor()}
+function openReport(id){current=JSON.parse(JSON.stringify(reports.find(r=>r.id===id)));renderEditor()}
+function renderEditor(){
+ const r=current;
+ $('#app').innerHTML=`<div class="editor-head"><button class="back" onclick="saveAndHome()">‹</button><div class="editor-title">${esc(r.computerNo||'Nowy komputer')}</div><div class="save-dot">● zapis automatyczny</div></div>
+ <div class="section-title">Identyfikacja</div><div class="card">
+ ${field('Nazwa kompa / numer','computerNo',r.computerNo,'np. 06543','numeric')}
+ ${field('Model','model',r.model,'np. HP EliteBook 840 G4')}
+ ${field('Procesor','cpu',r.cpu,'np. Intel i5-7200U')}
+ </div>
+ <div class="section-title">Specyfikacja</div><div class="card">
+ <div class="field"><span class="label">RAM</span><div class="chips">${['8','16','24','32'].map(v=>chip(v+' GB',r.ram===v,`setChoice('ram','${v}')`)).join('')}${chip('Inne',r.ram==='other',`setChoice('ram','other')`)}</div>${r.ram==='other'?field('', 'ramOther', r.ramOther,'Wpisz np. 64','numeric'):''}</div>
+ <div class="field"><span class="label">Dysk</span><div class="chips">${['256','512'].map(v=>chip(v+' GB',r.disk===v,`setChoice('disk','${v}')`)).join('')}${chip('Inny',r.disk==='other',`setChoice('disk','other')`)}</div>${r.disk==='other'?field('', 'diskOther', r.diskOther,'Wpisz pojemność w GB','numeric'):''}</div>
+ <div class="field"><span class="label">System operacyjny</span><div class="chips">${['Windows 10 Pro','Windows 11 Pro'].map(v=>chip(v,r.os===v,`setChoice('os',${JSON.stringify(v)})`)).join('')}${chip('Inny',r.os==='other',`setChoice('os','other')`)}</div>${r.os==='other'?field('', 'osOther', r.osOther,'Wpisz system'):''}</div>
+ </div>
+ <div class="section-title">Stan</div><div class="card">
+ <div class="field"><span class="label">Uwagi — w PDF będą duże i czerwone</span><textarea class="textarea" placeholder="np. Laptop sprzedawany jest bez zasilacza." oninput="setVal('notes',this.value)">${esc(r.notes)}</textarea>${r.notes?`<div class="warn-preview mt8">${esc(r.notes)}</div>`:''}</div>
+ <div class="field"><span class="label">Stan techniczny</span><div class="chips">${['Średni','Dobry','Bardzo dobry'].map(v=>`<button class="chip state ${r.condition===v?'active':''}" onclick="setChoice('condition',${JSON.stringify(v)})">${v}</button>`).join('')}</div></div>
+ <div class="field"><span class="label">Opis stanu</span><textarea class="textarea" placeholder="np. brak 1 śrubki od obudowy, ryski" oninput="setVal('conditionDesc',this.value)">${esc(r.conditionDesc)}</textarea></div>
+ </div>
+ <div class="section-title">Zdjęcia (${r.photos.length})</div><div class="card">
+ <div class="photos">${r.photos.map((p,i)=>photoCard(p,i)).join('')}</div>
+ <div class="photo-add"><label class="btn dark">📷 Zrób zdjęcie<input id="cam" class="file-input" type="file" accept="image/*" capture="environment" onchange="addFiles(this.files);this.value=''" /></label><label class="btn ghost">🖼️ Galeria<input id="gal" class="file-input" type="file" accept="image/*" multiple onchange="addFiles(this.files);this.value=''" /></label></div>
+ <div class="notice">Pierwsze zdjęcie trafia na 1. stronę PDF. Kolejne układają się po 2 na stronę. Ostatnie samotne zdjęcie będzie duże na osobnej stronie.</div>
+ </div>
+ <div class="section-title">Eksport</div><div class="card"><div class="row wrap"><button class="btn ghost grow" onclick="previewPDF()">👁 Podgląd PDF</button><button class="btn primary grow" onclick="sharePDF()">↗️ Udostępnij PDF</button></div><div class="row wrap mt8"><button class="btn ghost grow" onclick="duplicateCurrent()">⧉ Duplikuj</button><button class="btn danger grow" onclick="deleteCurrent()">🗑 Usuń</button></div></div>
+ <div class="sticky-actions"><div class="row"><button class="btn dark" onclick="saveAndHome()">✓ Zapisz i wróć</button></div></div>`;
+}
+function field(label,key,val,ph='',type='text'){return `<div class="field">${label?`<label class="label">${label}</label>`:''}<input class="input" type="${type}" inputmode="${type==='numeric'?'numeric':'text'}" value="${esc(val)}" placeholder="${esc(ph)}" oninput="setVal('${key}',this.value)" /></div>`}
+function chip(txt,on,click){return `<button class="chip ${on?'active':''}" onclick="${click}">${txt}</button>`}
+function photoCard(p,i){return `<div class="photo"><img src="${p.dataUrl}" alt="Zdjęcie ${i+1}"><div class="photo-meta"><div class="photo-title"><span>${i===0?'Główne':'Zdjęcie '+(i+1)}</span><span>${Math.round((p.size||0)/1024)} KB</span></div><div class="photo-actions"><button onclick="movePhoto(${i},-1)" ${i===0?'disabled':''}>↑</button><button onclick="movePhoto(${i},1)" ${i===current.photos.length-1?'disabled':''}>↓</button><button onclick="removePhoto(${i})">Usuń</button></div><label class="export-toggle"><input type="checkbox" ${p.export?'checked':''} onchange="togglePhotoExport(${i},this.checked)"> Eksportuj osobno jako PNG</label></div></div>`}
+function setVal(k,v){current[k]=v;current.updatedAt=nowISO();scheduleSave();if(k==='computerNo')$('.editor-title').textContent=v||'Nowy komputer'}
+function setChoice(k,v){current[k]=v;current.updatedAt=nowISO();scheduleSave();renderEditor()}
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveCurrent,300)}
+async function saveCurrent(){if(!current)return;await dbPut(current);const i=reports.findIndex(x=>x.id===current.id);if(i>=0)reports[i]=JSON.parse(JSON.stringify(current));else reports.unshift(JSON.parse(JSON.stringify(current)))}
+async function saveAndHome(){await saveCurrent();home()}
+async function duplicateCurrent(){await saveCurrent();const c=JSON.parse(JSON.stringify(current));c.id=uuid();c.computerNo='';c.createdAt=c.updatedAt=nowISO();c.photos=c.photos.map(p=>({...p,id:uuid()}));await dbPut(c);reports.unshift(c);current=c;toast('Utworzono kopię');renderEditor()}
+async function deleteCurrent(){if(!confirm('Usunąć ten raport?'))return;await dbDel(current.id);reports=reports.filter(x=>x.id!==current.id);selected.delete(current.id);home()}
+function movePhoto(i,d){const j=i+d;if(j<0||j>=current.photos.length)return;[current.photos[i],current.photos[j]]=[current.photos[j],current.photos[i]];scheduleSave();renderEditor()}
+function removePhoto(i){current.photos.splice(i,1);scheduleSave();renderEditor()}
+function togglePhotoExport(i,on){current.photos[i].export=on;scheduleSave()}
+async function addFiles(fileList){const files=[...fileList];if(!files.length)return;loading(true);try{for(const f of files){const p=await imageToJpeg(f,1900,.86);current.photos.push({id:uuid(),dataUrl:p.dataUrl,width:p.width,height:p.height,size:p.size,export:false,name:f.name||'photo'})}current.updatedAt=nowISO();await saveCurrent();renderEditor();toast(`Dodano ${files.length} zdjęć`)}catch(e){console.error(e);alert('Nie udało się dodać zdjęcia: '+e.message)}finally{loading(false)}}
+function imageToJpeg(file,maxDim=1900,quality=.86){return new Promise((res,rej)=>{const fr=new FileReader();fr.onerror=()=>rej(new Error('Nie można odczytać pliku'));fr.onload=()=>{const img=new Image();img.onerror=()=>rej(new Error('Format zdjęcia nie jest obsługiwany'));img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;const scale=Math.min(1,maxDim/Math.max(w,h));w=Math.round(w*scale);h=Math.round(h*scale);const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);const dataUrl=c.toDataURL('image/jpeg',quality);res({dataUrl,width:w,height:h,size:Math.round((dataUrl.length-22)*3/4)})};img.src=fr.result};fr.readAsDataURL(file)})}
+function requirePDF(){if(!window.jspdf){alert('Generator PDF nie załadował się. Połącz się z internetem i odśwież aplikację raz.');return false}return true}
+function splitText(doc,text,maxW){return doc.splitTextToSize(text,maxW)}
+function addImageContain(doc,p,x,y,w,h){const ar=p.width/p.height, box=w/h;let dw,dh;if(ar>box){dw=w;dh=w/ar}else{dh=h;dw=h*ar}doc.addImage(p.dataUrl,'JPEG',x+(w-dw)/2,y+(h-dh)/2,dw,dh,'','FAST')}
+async function makePdf(report){if(!requirePDF())throw new Error('Brak generatora PDF');const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4',compress:true});const W=210,H=297,m=17,contentW=W-2*m;let y=22;
+ doc.setTextColor(25,30,42);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text((report.model||'Komputer')+':',m,y);y+=13;doc.setFont('helvetica','normal');doc.setFontSize(11.5);
+ const specs=[]; if(report.cpu)specs.push(['Procesor',report.cpu]); const ram=report.ram==='other'?report.ramOther:report.ram; if(ram)specs.push(['Pamięć RAM',ram+' GB RAM']); const disk=report.disk==='other'?report.diskOther:report.disk; if(disk)specs.push(['Dysk SSD',disk+' GB']); const os=report.os==='other'?report.osOther:report.os; if(os)specs.push(['System operacyjny',os]);
+ specs.forEach(([a,b])=>{doc.text('• '+a+': '+b,m+2,y);y+=7});
+ if(report.notes){y+=3;doc.setTextColor(210,35,35);doc.setFont('helvetica','bold');doc.setFontSize(17);const lines=splitText(doc,report.notes,contentW-4);doc.text(lines,m+2,y);y+=lines.length*7.5+3;doc.setTextColor(25,30,42)}
+ doc.setFontSize(11.5);doc.setFont('helvetica','bold');doc.text('Stan techniczny:',m,y);const sw=doc.getTextWidth('Stan techniczny: ');doc.setFont('helvetica','normal');const state=[report.condition,report.conditionDesc].filter(Boolean).join(', ');const stateLines=splitText(doc,state,contentW-sw);doc.text(stateLines,m+sw,y);y+=Math.max(7,stateLines.length*6)+5;
+ if(report.photos[0]){const availH=Math.max(35,H-m-y);addImageContain(doc,report.photos[0],m,y,contentW,availH)}
+ const rest=report.photos.slice(1);let idx=0;while(idx<rest.length){doc.addPage();const left=rest.length-idx;if(left===1){addImageContain(doc,rest[idx],m,18,contentW,H-36);idx++}else{const gap=10,boxH=(H-36-gap)/2;addImageContain(doc,rest[idx],m,18,contentW,boxH);addImageContain(doc,rest[idx+1],m,18+boxH+gap,contentW,boxH);idx+=2}}
+ return doc.output('blob')}
+async function previewPDF(){loading(true);try{await saveCurrent();const b=await makePdf(current);const u=URL.createObjectURL(b);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}catch(e){alert(e.message)}finally{loading(false)}}
+async function shareBlob(blob,name,title='Raport'){const file=new File([blob],name,{type:blob.type||'application/octet-stream'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title})}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);toast('Plik zapisany — możesz go udostępnić z Plików')}}
+async function sharePDF(){loading(true);try{await saveCurrent();if(!current.computerNo){alert('Najpierw wpisz Nazwę kompa / numer, np. 06543.');return}const b=await makePdf(current);await shareBlob(b,safeName(current.computerNo)+'.pdf','Raport '+current.computerNo)}catch(e){if(e.name!=='AbortError')alert('Nie udało się udostępnić PDF: '+e.message)}finally{loading(false)}}
+function jpegToPngBlob(p){return new Promise((res,rej)=>{const img=new Image();img.onerror=rej;img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>b?res(b):rej(new Error('Błąd PNG')),'image/png')};img.src=p.dataUrl})}
+async function exportBatch(){if(!selected.size)return;if(!window.JSZip){alert('Generator ZIP nie załadował się. Połącz się z internetem i odśwież aplikację raz.');return}loading(true);try{const zip=new JSZip();const picked=reports.filter(r=>selected.has(r.id));for(const r of picked){const base=safeName(r.computerNo||r.model||'raport');const pdf=await makePdf(r);zip.file(base+'.pdf',pdf);const imgs=r.photos.filter(p=>p.export);for(let i=0;i<imgs.length;i++){const png=await jpegToPngBlob(imgs[i]);const name=imgs.length===1?`${base}.png`:`${base}_${i+1}.png`;zip.file(name,png)}}const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});const d=new Date();const ds=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;await shareBlob(blob,`Raporty_${ds}.zip`,'Paczka raportów')}catch(e){if(e.name!=='AbortError')alert('Nie udało się utworzyć paczki: '+e.message)}finally{loading(false)}}
+function showInstall(){$('#installModal').classList.add('show')}function closeInstall(){$('#installModal').classList.remove('show')}
+async function init(){try{await openDB();reports=await dbAll();renderHome();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})}catch(e){console.error(e);alert('Nie udało się uruchomić pamięci aplikacji. Spróbuj otworzyć stronę w Safari poza trybem prywatnym.')}}
+init();
+</script>
+</body>
+</html>
