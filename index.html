@@ -51,13 +51,14 @@
 <div id="loading" class="loading"><div class="spinner"></div></div>
 <div id="installModal" class="modal" onclick="if(event.target===this) closeInstall()"><div class="sheet"><h2>Dodaj aplikację na ekran główny</h2><p>Na iPhonie otwórz tę stronę w <b>Safari</b>, stuknij ikonę <b>Udostępnij</b> (kwadrat ze strzałką) i wybierz <b>Dodaj do ekranu początkowego</b>.</p><button class="btn primary" style="width:100%" onclick="closeInstall()">OK</button></div></div>
 <div id="cropModal" class="modal"><div class="sheet crop-sheet"><h2>Kadruj zdjęcie</h2><div class="crop-area"><img id="cropImage" alt="Kadrowanie"></div><div class="crop-actions"><button class="btn ghost" onclick="rotateCrop(-90)">↺ Obróć</button><button class="btn ghost" onclick="resetCrop()">Reset</button><button class="btn ghost" onclick="rotateCrop(90)">Obróć ↻</button></div><div class="row mt12"><button class="btn ghost grow" onclick="closeCrop()">Anuluj</button><button class="btn primary grow" onclick="saveCrop()">Zapisz kadr</button></div></div></div>
+<div id="shareReadyModal" class="modal" onclick="if(event.target===this)closePreparedShare()"><div class="sheet"><h2 id="shareReadyTitle">Plik gotowy</h2><p id="shareReadyText">Plik został przygotowany. Stuknij przycisk poniżej, żeby otworzyć systemowe udostępnianie iPhone’a.</p><div class="row"><button class="btn ghost grow" onclick="closePreparedShare()">Anuluj</button><button class="btn primary grow" onclick="performPreparedShare()">↗️ Udostępnij</button></div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
 const DB_NAME='kompRaportDB_v2', DB_VER=1, DATA_STORE='items', LEGACY_DB='kompRaportDB', UNFILED='__unfiled__';
-let db=null, reports=[], folders=[], selected=new Set(), current=null, currentFolderKey=null, saveTimer=null, cropper=null, cropIndex=-1;
+let db=null, reports=[], folders=[], selected=new Set(), current=null, currentFolderKey=null, saveTimer=null, cropper=null, cropIndex=-1, preparedShare=null;
 const $=s=>document.querySelector(s), esc=s=>(s??'').toString().replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),2200)}
 function loading(on){$('#loading').classList.toggle('show',!!on)}
@@ -221,10 +222,30 @@ function buildPdfPages(report){
 async function waitImages(root){const imgs=[...root.querySelectorAll('img')];await Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(res=>{img.onload=res;img.onerror=res})))}
 async function makePdf(report){if(!requirePDF())throw new Error('Brak generatora PDF');const {jsPDF}=window.jspdf;const root=buildPdfPages(report);document.body.appendChild(root);try{await waitImages(root);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));const pages=[...root.querySelectorAll('.pdf-page')];const doc=new jsPDF({unit:'mm',format:'a4',compress:true});for(let i=0;i<pages.length;i++){const canvas=await html2canvas(pages[i],{scale:2,backgroundColor:'#ffffff',logging:false,useCORS:true,allowTaint:true});const img=canvas.toDataURL('image/jpeg',.94);if(i>0)doc.addPage();doc.addImage(img,'JPEG',0,0,210,297,undefined,'FAST')}return doc.output('blob')}finally{root.remove()}}
 async function previewPDF(){loading(true);try{await saveCurrent();const b=await makePdf(current);const u=URL.createObjectURL(b);window.open(u,'_blank');setTimeout(()=>URL.revokeObjectURL(u),60000)}catch(e){alert(e.message)}finally{loading(false)}}
-async function shareBlob(blob,name,title='Raport'){const file=new File([blob],name,{type:blob.type||'application/octet-stream'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title})}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),30000);toast('Plik zapisany — możesz go udostępnić z Plików')}}
-async function sharePDF(){loading(true);try{await saveCurrent();if(!current.computerNo){alert('Najpierw wpisz Nazwę kompa / numer, np. 06543.');return}const b=await makePdf(current);await shareBlob(b,safeName(current.computerNo)+'.pdf','Raport '+current.computerNo)}catch(e){if(e.name!=='AbortError')alert('Nie udało się udostępnić PDF: '+e.message)}finally{loading(false)}}
+function downloadBlob(blob,name){const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+function prepareShare(blob,name,title='Raport',description='Plik został przygotowany. Stuknij Udostępnij, aby otworzyć systemowe menu iPhone’a.'){preparedShare={blob,name,title};$('#shareReadyTitle').textContent=title||'Plik gotowy';$('#shareReadyText').textContent=description;$('#shareReadyModal').classList.add('show')}
+function closePreparedShare(){$('#shareReadyModal').classList.remove('show');preparedShare=null}
+function performPreparedShare(){
+ if(!preparedShare)return;
+ const {blob,name,title}=preparedShare;
+ const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
+ if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+   navigator.share({files:[file],title}).then(()=>closePreparedShare()).catch(e=>{
+     if(e&&e.name==='AbortError')return;
+     console.warn('share failed, using download fallback',e);
+     downloadBlob(blob,name);
+     closePreparedShare();
+     toast('Zapisano plik — możesz wysłać go z aplikacji Pliki');
+   });
+ }else{
+   downloadBlob(blob,name);
+   closePreparedShare();
+   toast('Zapisano plik — możesz wysłać go z aplikacji Pliki');
+ }
+}
+async function sharePDF(){loading(true);try{await saveCurrent();if(!current.computerNo){alert('Najpierw wpisz Nazwę kompa / numer, np. 06543.');return}const b=await makePdf(current);prepareShare(b,safeName(current.computerNo)+'.pdf','Raport '+current.computerNo,'PDF jest gotowy. Stuknij Udostępnij, żeby wysłać go przez Mail, Gmail, AirDrop lub zapisać w Plikach.')}catch(e){if(e.name!=='AbortError')alert('Nie udało się przygotować PDF: '+e.message)}finally{loading(false)}}
 function jpegToPngBlob(p){return new Promise((res,rej)=>{const img=new Image();img.onerror=rej;img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);c.toBlob(b=>b?res(b):rej(new Error('Błąd PNG')),'image/png')};img.src=p.dataUrl})}
-async function exportBatch(){if(!selected.size)return;if(!window.JSZip){alert('Generator ZIP nie załadował się. Połącz się z internetem i odśwież aplikację raz.');return}loading(true);try{const zip=new JSZip();const picked=reports.filter(r=>selected.has(r.id));for(const r of picked){const base=safeName(r.computerNo||r.model||'raport');const pdf=await makePdf(r);zip.file(base+'.pdf',pdf);const imgs=r.photos.filter(p=>p.export);for(let i=0;i<imgs.length;i++){const png=await jpegToPngBlob(imgs[i]);const name=imgs.length===1?`${base}.png`:`${base}_${i+1}.png`;zip.file(name,png)}}const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});const d=new Date();const ds=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;await shareBlob(blob,`Raporty_${ds}.zip`,'Paczka raportów')}catch(e){if(e.name!=='AbortError')alert('Nie udało się utworzyć paczki: '+e.message)}finally{loading(false)}}
+async function exportBatch(){if(!selected.size)return;if(!window.JSZip){alert('Generator ZIP nie załadował się. Połącz się z internetem i odśwież aplikację raz.');return}loading(true);try{const zip=new JSZip();const picked=reports.filter(r=>selected.has(r.id));for(const r of picked){const base=safeName(r.computerNo||r.model||'raport');const pdf=await makePdf(r);zip.file(base+'.pdf',pdf);const imgs=r.photos.filter(p=>p.export);for(let i=0;i<imgs.length;i++){const png=await jpegToPngBlob(imgs[i]);const name=imgs.length===1?`${base}.png`:`${base}_${i+1}.png`;zip.file(name,png)}}const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:5}});const d=new Date();const ds=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;prepareShare(blob,`Raporty_${ds}.zip`,'Paczka raportów','Paczka ZIP jest gotowa. Stuknij Udostępnij — ten dodatkowy przycisk jest potrzebny na iPhonie, bo iOS blokuje automatyczne udostępnianie po dłuższym generowaniu pliku.')}catch(e){if(e.name!=='AbortError')alert('Nie udało się utworzyć paczki: '+e.message)}finally{loading(false)}}
 function showInstall(){$('#installModal').classList.add('show')}function closeInstall(){$('#installModal').classList.remove('show')}
 async function init(){try{$('#app').innerHTML='<div class="card empty"><div class="emoji">⏳</div><b>Uruchamianie aplikacji…</b></div>';await openDB();await migrateLegacyIfNeeded();[reports,folders]=await Promise.all([dbAll(),dbFolders()]);renderHome();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})}catch(e){console.error(e);$('#app').innerHTML='<div class="card empty"><div class="emoji">⚠️</div><b>Nie udało się uruchomić aplikacji</b><div class="mt8">'+esc(e?.message||String(e))+'</div><button class="btn primary mt12" onclick="location.reload()">Odśwież</button></div>'}}
 init();
