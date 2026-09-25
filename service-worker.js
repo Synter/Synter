@@ -1,4 +1,4 @@
-const CACHE='raporty-v5';
+const CACHE='raporty-v6';
 const CORE=[
   './','./index.html','./manifest.json','./icon.svg',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
