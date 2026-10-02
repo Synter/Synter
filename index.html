@@ -250,5 +250,6 @@ function showInstall(){$('#installModal').classList.add('show')}function closeIn
 async function init(){try{$('#app').innerHTML='<div class="card empty"><div class="emoji">⏳</div><b>Uruchamianie aplikacji…</b></div>';await openDB();await migrateLegacyIfNeeded();[reports,folders]=await Promise.all([dbAll(),dbFolders()]);renderHome();if('serviceWorker' in navigator)navigator.serviceWorker.register('./service-worker.js').catch(()=>{})}catch(e){console.error(e);$('#app').innerHTML='<div class="card empty"><div class="emoji">⚠️</div><b>Nie udało się uruchomić aplikacji</b><div class="mt8">'+esc(e?.message||String(e))+'</div><button class="btn primary mt12" onclick="location.reload()">Odśwież</button></div>'}}
 init();
 </script>
+<script src="./monitor.js"></script>
 </body>
 </html>
