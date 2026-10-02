@@ -1,6 +1,6 @@
-const CACHE='raporty-v7';
+const CACHE='raporty-v8';
 const CORE=[
-  './','./index.html','./manifest.json','./icon.svg',
+  './','./index.html','./manifest.json','./icon.svg','./monitor.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
