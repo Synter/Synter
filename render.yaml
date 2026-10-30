@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: raporty-komputerow
+    runtime: static
+    buildCommand: echo "No build required"
+    staticPublishPath: .
+    autoDeployTrigger: commit
+    headers:
+      - path: /service-worker.js
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
